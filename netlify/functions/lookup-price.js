@@ -1,10 +1,14 @@
 // netlify/functions/lookup-price.js
 //
 // 프론트엔드에서 fetch('/.netlify/functions/lookup-price?address=...') 로 호출
-// 인증키는 Netlify 환경변수 VWORLD_API_KEY 에서 읽어옴 (코드에 직접 넣지 않음)
-// Netlify 대시보드: Site settings > Environment variables > VWORLD_API_KEY 등록 필요
+// 인증키는 Netlify 환경변수에서 읽어옴 (코드에 직접 넣지 않음)
+// 브이월드는 공동주택/개별주택 API마다 별도 인증키를 발급하므로 두 개로 분리:
+//   VWORLD_API_KEY_APART = 공동주택가격속성조회용 인증키(Decoding)
+//   VWORLD_API_KEY_INDVD = 개별주택가격속성조회용 인증키(Decoding)
+// Netlify 대시보드: Site settings > Environment variables 에 둘 다 등록 필요
 
-const VWORLD_KEY = process.env.VWORLD_API_KEY;
+const VWORLD_KEY_APART = process.env.VWORLD_API_KEY_APART;
+const VWORLD_KEY_INDVD = process.env.VWORLD_API_KEY_INDVD;
 const CURRENT_YEAR = 2026;
 const PREV_YEAR = 2025;
 
@@ -14,7 +18,7 @@ exports.handler = async (event) => {
   if (!address) {
     return json(400, { ok: false, reason: 'missing_address' });
   }
-  if (!VWORLD_KEY) {
+  if (!VWORLD_KEY_APART && !VWORLD_KEY_INDVD) {
     return json(500, { ok: false, reason: 'missing_api_key' });
   }
 
@@ -95,22 +99,21 @@ async function addressToPnu(address) {
 }
 
 // 공동주택가격속성조회: https://api.vworld.kr/ned/data/getApartHousingPriceAttr
+// (조회 순서는 기존과 동일: 공동주택 먼저 → 못 찾으면 개별주택으로 폴백)
 async function fetchApartPrice(pnu, year) {
+  if (!VWORLD_KEY_APART) return null;
   const url = `https://api.vworld.kr/ned/data/getApartHousingPriceAttr` +
-    `?pnu=${pnu}&stdrYear=${year}&format=json&key=${VWORLD_KEY}`;
+    `?pnu=${pnu}&stdrYear=${year}&format=json&key=${VWORLD_KEY_APART}`;
   const res = await fetch(url);
   const data = await res.json();
   return extractPrice(data, 'pblntfPc');
 }
 
-// 개별(단독)주택가격정보 API
-// 엔드포인트명은 공동주택 API 네이밍 패턴(getApartHousingPriceAttr)과 data.go.kr의
-// 서비스명(IndvdHousingPriceService)을 참고해 getIndvdHousingPriceAttr로 추정 반영했습니다.
-// ⚠ 실제 페이지 상단 "요청주소" 줄과 다르면 아래 URL만 고치면 됩니다.
-// 응답 필드명은 확인 완료: 공시가격 = housePc (공동주택의 pblntfPc와 다름)
+// 개별(단독)주택가격정보 API — 공동주택에서 못 찾았을 때만 호출됨
 async function fetchDetachedPrice(pnu, year) {
+  if (!VWORLD_KEY_INDVD) return null;
   const url = `https://api.vworld.kr/ned/data/getIndvdHousingPriceAttr` +
-    `?pnu=${pnu}&stdrYear=${year}&format=json&key=${VWORLD_KEY}`;
+    `?pnu=${pnu}&stdrYear=${year}&format=json&key=${VWORLD_KEY_INDVD}`;
   const res = await fetch(url);
   const data = await res.json();
   return extractPrice(data, 'housePc');
