@@ -1,0 +1,142 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>관할 세무서 찾기</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+<link rel="stylesheet" as="style" crossorigin href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.css" />
+<style>
+  :root{
+    --ink:#1C2B45;
+    --paper:#F5F1E8;
+    --card:#FFFFFF;
+    --seal:#A93226;
+    --slate:#5B6B7D;
+    --brass:#A9863C;
+    --hair:#E4DFD2;
+    --warn-bg:#FBF1DD;
+    --ok-bg:#E9F1EA;
+    --ok-text:#2E5C3A;
+  }
+  *{box-sizing:border-box;}
+  body{
+    margin:0;
+    background:var(--paper);
+    background-image:radial-gradient(circle at 1px 1px, rgba(28,43,69,0.05) 1px, transparent 0);
+    background-size:22px 22px;
+    color:var(--ink);
+    font-family:'Pretendard', sans-serif;
+    -webkit-font-smoothing:antialiased;
+  }
+  .wrap{ max-width:720px; margin:0 auto; padding:64px 24px 100px; }
+  .eyebrow{ font-size:12px; letter-spacing:0.14em; color:var(--brass); text-transform:uppercase; margin:0 0 12px; font-weight:500; text-align:center; }
+  h1{ font-family:'Pretendard', sans-serif; font-size:36px; font-weight:800; margin:0 0 10px; text-align:center; color:var(--ink); }
+  .sub{ text-align:center; color:var(--slate); font-size:15px; margin:0 0 36px; }
+  input#q{
+    width:100%; font-family:'Pretendard', sans-serif; font-size:17px; padding:18px 20px;
+    border:1.5px solid var(--ink); border-radius:2px; background:var(--card); color:var(--ink); outline:none;
+  }
+  input#q::placeholder{color:#A6ADB8;}
+  input#q:focus{border-color:var(--seal);}
+  .hint{ font-size:12px; color:var(--slate); margin:10px 0 32px; }
+  .count{ font-size:13px; color:var(--slate); margin:0 0 14px; }
+  .results{ display:flex; flex-direction:column; gap:10px; }
+  .result{ display:block; text-decoration:none; color:inherit; background:var(--card); border:1px solid var(--hair); border-left:3px solid var(--seal); padding:16px 20px; border-radius:2px; }
+  .result.fallback{ border-left-color:var(--brass); }
+  .result:hover{ border-left-color:#7A241A; }
+  .r-name{ font-family:'Pretendard', sans-serif; font-weight:800; font-size:19px; margin:0 0 4px; color:var(--ink); }
+  .r-juris{ font-size:13.5px; color:var(--slate); line-height:1.6; margin:0; }
+  .badge{ display:inline-block; font-size:11px; padding:2px 8px; border-radius:2px; margin-left:8px; vertical-align:middle; font-weight:500; }
+  .badge.ok{ background:var(--ok-bg); color:var(--ok-text); }
+  .badge.warn{ background:var(--warn-bg); color:#8A6412; }
+  .empty{ text-align:center; color:var(--slate); font-size:14px; padding:40px 0; }
+  .loading{ text-align:center; color:var(--slate); font-size:13px; padding:12px 0; }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <p class="eyebrow">전국 세무서 관할구역 조회</p>
+  <h1>관할 세무서 찾기</h1>
+  <p class="sub">동/구/시 이름을 입력하면 담당 세무서를 바로 찾아드립니다</p>
+
+  <input id="q" type="text" placeholder="예: 역삼동, 강남구, 수원시" autocomplete="off">
+  <p class="hint">
+    <span class="badge ok">정확</span> 법정동 데이터 기준 정밀 매칭 (95개 세무서, 3,847개 동)&nbsp;·&nbsp;
+    <span class="badge warn">확인 필요</span> 구/시 단위로만 표시됨 — 세부 동 정보는 세무서 문의 권장 (38개 세무서)
+  </p>
+
+  <p class="loading" id="loading">데이터 불러오는 중…</p>
+  <p class="count" id="count"></p>
+  <div class="results" id="results"></div>
+  <p class="empty" id="empty" style="display:none;">일치하는 세무서를 찾지 못했습니다. 구/시/동 이름으로 다시 검색해 보세요.</p>
+</div>
+
+<script>
+let PRECISE = [];
+let FALLBACK = [];
+
+Promise.all([
+  fetch('precise.json').then(r => r.json()),
+  fetch('fallback.json').then(r => r.json())
+]).then(([p, f]) => {
+  PRECISE = p;
+  FALLBACK = f;
+  document.getElementById('loading').style.display = 'none';
+}).catch(() => {
+  document.getElementById('loading').textContent = '데이터를 불러오지 못했습니다. 서버 환경에서 열어주세요 (file:// 직접 열기는 지원되지 않을 수 있습니다).';
+});
+
+const q = document.getElementById('q');
+const results = document.getElementById('results');
+const count = document.getElementById('count');
+const empty = document.getElementById('empty');
+
+function render(preciseHits, fallbackHits) {
+  results.innerHTML = '';
+  const total = preciseHits.length + fallbackHits.length;
+  if (total === 0) {
+    empty.style.display = 'block';
+    count.textContent = '';
+    return;
+  }
+  empty.style.display = 'none';
+  count.textContent = total + '건 검색됨';
+
+  preciseHits.slice(0, 30).forEach(h => {
+    const a = document.createElement('a');
+    a.className = 'result';
+    a.href = 'pages/' + h.code + '.html';
+    a.innerHTML =
+      '<p class="r-name">' + h.name + '<span class="badge ok">정확</span></p>' +
+      '<p class="r-juris">' + h.dong + ' (' + h.sigungu + ', ' + h.sido + ')</p>';
+    results.appendChild(a);
+  });
+
+  fallbackHits.forEach(h => {
+    const a = document.createElement('a');
+    a.className = 'result fallback';
+    a.href = 'pages/' + h.code + '.html';
+    a.innerHTML =
+      '<p class="r-name">' + h.name + '<span class="badge warn">확인 필요</span></p>' +
+      '<p class="r-juris">' + h.juris + '</p>';
+    results.appendChild(a);
+  });
+}
+
+q.addEventListener('input', () => {
+  const v = q.value.trim();
+  if (v === '') {
+    results.innerHTML = '';
+    count.textContent = '';
+    empty.style.display = 'none';
+    return;
+  }
+  const preciseHits = PRECISE.filter(h => h.dong.includes(v) || h.sigungu.includes(v));
+  const fallbackHits = FALLBACK.filter(h => h.name.includes(v) || h.juris.includes(v) || h.addr.includes(v));
+  render(preciseHits, fallbackHits);
+});
+</script>
+</body>
+</html>

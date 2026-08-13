@@ -1,0 +1,78 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>생활 계산기 모음</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+<link rel="stylesheet" as="style" crossorigin href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.css" />
+<style>
+  :root{
+    --ink:#1C2B45; --paper:#F5F1E8; --card:#FFFFFF; --seal:#A93226;
+    --slate:#5B6B7D; --brass:#A9863C; --hair:#E4DFD2;
+  }
+  *{box-sizing:border-box;}
+  body{
+    margin:0; background:var(--paper);
+    background-image:radial-gradient(circle at 1px 1px, rgba(28,43,69,0.05) 1px, transparent 0);
+    background-size:22px 22px; color:var(--ink); font-family:'Pretendard', sans-serif; -webkit-font-smoothing:antialiased;
+  }
+  .wrap{ max-width:760px; margin:0 auto; padding:64px 24px 100px; }
+  .eyebrow{ font-size:12px; letter-spacing:0.14em; color:var(--brass); text-transform:uppercase; margin:0 0 12px; font-weight:500; text-align:center; }
+  h1{ font-family:'Pretendard', sans-serif; font-weight:800; font-size:36px; margin:0 0 10px; text-align:center; }
+  .sub{ text-align:center; color:var(--slate); font-size:14.5px; margin:0 0 48px; }
+
+  .category{ margin-bottom:40px; }
+  .category-title{ font-size:13px; color:var(--brass); font-weight:600; letter-spacing:0.04em; margin:0 0 14px; padding-bottom:8px; border-bottom:1px solid var(--hair); }
+
+  .grid{ display:grid; grid-template-columns:1fr 1fr; gap:14px; }
+  .card{
+    display:block; text-decoration:none; color:inherit; background:var(--card);
+    border:1px solid var(--hair); border-left:3px solid var(--seal); border-radius:2px; padding:20px;
+  }
+  .card:hover{ border-left-color:var(--brass); }
+  .card-title{ font-weight:700; font-size:16px; margin:0 0 6px; }
+  .card-desc{ font-size:13px; color:var(--slate); line-height:1.6; margin:0; }
+
+  @media (max-width:600px){ .grid{ grid-template-columns:1fr; } }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <p class="eyebrow">2026년 기준 · 실무형 계산기</p>
+  <h1>생활 계산기 모음</h1>
+  <p class="sub">세금·부동산·노동 관련 계산을 한 곳에서</p>
+
+  <div class="category">
+    <p class="category-title">세금</p>
+    <div class="grid">
+      <a class="card" href="/tax/property-tax/">
+        <p class="card-title">종합부동산세 계산기</p>
+        <p class="card-desc">기본공제·세율·세액공제·세부담상한·공동명의 비교까지</p>
+      </a>
+    </div>
+  </div>
+
+  <div class="category">
+    <p class="category-title">노동·복지</p>
+    <div class="grid">
+      <a class="card" href="/labor/unemployment-parental/">
+        <p class="card-title">실업급여 · 육아휴직급여 계산기</p>
+        <p class="card-desc">2026년 기준 구직급여·육아휴직급여 자동 계산</p>
+      </a>
+    </div>
+  </div>
+
+  <div class="category">
+    <p class="category-title">부동산·행정</p>
+    <div class="grid">
+      <a class="card" href="/property/tax-office/">
+        <p class="card-title">관할 세무서 찾기</p>
+        <p class="card-desc">동/구/시 입력하면 담당 세무서를 바로 안내</p>
+      </a>
+    </div>
+  </div>
+</div>
+</body>
+</html>

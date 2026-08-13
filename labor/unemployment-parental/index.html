@@ -1,0 +1,268 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>실업급여·육아휴직급여 계산기 (2026년 기준)</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+<link rel="stylesheet" as="style" crossorigin href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.css" />
+<style>
+  :root{
+    --ink:#1C2B45; --paper:#F5F1E8; --card:#FFFFFF; --seal:#A93226;
+    --slate:#5B6B7D; --brass:#A9863C; --hair:#E4DFD2; --ok-bg:#E9F1EA; --ok-text:#2E5C3A;
+  }
+  *{box-sizing:border-box;}
+  body{
+    margin:0; background:var(--paper);
+    background-image:radial-gradient(circle at 1px 1px, rgba(28,43,69,0.05) 1px, transparent 0);
+    background-size:22px 22px; color:var(--ink); font-family:'Pretendard', sans-serif; -webkit-font-smoothing:antialiased;
+  }
+  .wrap{ max-width:720px; margin:0 auto; padding:56px 24px 100px; }
+  .eyebrow{ font-size:12px; letter-spacing:0.14em; color:var(--brass); text-transform:uppercase; margin:0 0 12px; font-weight:500; text-align:center; }
+  h1{ font-family:'Pretendard', sans-serif; font-size:32px; font-weight:800; margin:0 0 10px; text-align:center; }
+  .sub{ text-align:center; color:var(--slate); font-size:14px; margin:0 0 32px; }
+
+  .tabs{ display:flex; gap:8px; margin-bottom:24px; }
+  .tab{
+    flex:1; text-align:center; padding:14px; border:1.5px solid var(--ink); border-radius:2px;
+    font-size:15px; font-weight:500; cursor:pointer; background:var(--card); color:var(--ink);
+  }
+  .tab.active{ background:var(--ink); color:#fff; }
+
+  .card{ background:var(--card); border:1px solid var(--hair); border-radius:2px; padding:32px; }
+  .field{ margin-bottom:20px; }
+  .field label{ display:block; font-size:13px; color:var(--slate); margin-bottom:6px; }
+  .field input, .field select{
+    width:100%; font-family:'IBM Plex Mono', monospace; font-size:16px; padding:12px 14px;
+    border:1px solid var(--hair); border-radius:2px; background:var(--paper); color:var(--ink); outline:none;
+  }
+  .field input:focus, .field select:focus{ border-color:var(--seal); }
+  .row2{ display:grid; grid-template-columns:1fr 1fr; gap:16px; }
+
+  .result{ margin-top:8px; background:var(--paper); border-left:3px solid var(--seal); padding:22px; }
+  .result-label{ font-size:12px; letter-spacing:0.08em; color:var(--seal); text-transform:uppercase; margin:0 0 6px; font-weight:500; }
+  .result-value{ font-family:'Pretendard', sans-serif; font-weight:800; font-size:30px; margin:0 0 4px; }
+  .result-sub{ font-size:13px; color:var(--slate); margin:0; }
+
+  table{ width:100%; border-collapse:collapse; margin-top:18px; font-size:13.5px; }
+  th, td{ text-align:right; padding:9px 6px; border-bottom:1px solid var(--hair); font-family:'IBM Plex Mono', monospace; }
+  th:first-child, td:first-child{ text-align:left; font-family:'Pretendard', sans-serif; }
+  th{ color:var(--slate); font-weight:500; font-size:12px; }
+
+  .note{ font-size:12px; color:var(--slate); margin-top:20px; line-height:1.7; }
+  .badge{ display:inline-block; font-size:11px; background:var(--ok-bg); color:var(--ok-text); padding:2px 8px; border-radius:2px; margin-left:6px; }
+  .hidden{ display:none; }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <p class="eyebrow">2026년 기준 실무 계산기</p>
+  <h1>실업급여 · 육아휴직급여 계산기</h1>
+  <p class="sub">2026년 고용보험법 기준 상·하한액을 반영했습니다</p>
+
+  <div class="tabs">
+    <div class="tab active" id="tab-unemploy">구직급여(실업급여)</div>
+    <div class="tab" id="tab-parental">육아휴직급여</div>
+  </div>
+
+  <!-- 실업급여 -->
+  <div class="card" id="panel-unemploy">
+    <div class="row2">
+      <div class="field">
+        <label>퇴직 전 3개월 총 급여 (원)</label>
+        <input type="text" id="u-wage" placeholder="예: 9000000" inputmode="numeric">
+      </div>
+      <div class="field">
+        <label>해당 기간 총 일수</label>
+        <input type="text" id="u-days" value="91" inputmode="numeric">
+      </div>
+    </div>
+    <div class="row2">
+      <div class="field">
+        <label>이직일 기준 연령</label>
+        <select id="u-age">
+          <option value="under50">50세 미만</option>
+          <option value="over50">50세 이상 · 장애인</option>
+        </select>
+      </div>
+      <div class="field">
+        <label>고용보험 가입기간</label>
+        <select id="u-insured">
+          <option value="1">1년 미만</option>
+          <option value="3">1년 이상 ~ 3년 미만</option>
+          <option value="5">3년 이상 ~ 5년 미만</option>
+          <option value="10">5년 이상 ~ 10년 미만</option>
+          <option value="99">10년 이상</option>
+        </select>
+      </div>
+    </div>
+
+    <div class="result">
+      <p class="result-label">1일 구직급여액</p>
+      <p class="result-value" id="u-daily">-</p>
+      <p class="result-sub" id="u-daily-note"></p>
+    </div>
+    <div class="result" style="margin-top:12px; border-left-color:var(--brass);">
+      <p class="result-label">소정급여일수 × 예상 총 수령액</p>
+      <p class="result-value" id="u-total">-</p>
+      <p class="result-sub" id="u-days-note"></p>
+    </div>
+
+    <p class="note">
+      2026년 기준 1일 상한액 68,100원 · 하한액 66,048원 (2026.1.1 이후 이직자 적용)<br>
+      계산식: 1일 구직급여액 = 퇴직 전 3개월 총 급여 ÷ 총 일수 × 60% (상하한 적용)<br>
+      본 계산은 참고용이며, 정확한 수급 자격과 금액은 관할 고용센터를 통해 확인하시기 바랍니다.
+    </p>
+  </div>
+
+  <!-- 육아휴직급여 -->
+  <div class="card hidden" id="panel-parental">
+    <div class="row2">
+      <div class="field">
+        <label>월 통상임금 (원)</label>
+        <input type="text" id="p-wage" placeholder="예: 3200000" inputmode="numeric">
+      </div>
+      <div class="field">
+        <label>육아휴직 사용 개월수</label>
+        <select id="p-months">
+          <option>3</option><option>6</option><option selected>9</option><option>12</option>
+        </select>
+      </div>
+    </div>
+
+    <div class="result">
+      <p class="result-label">총 예상 수령액</p>
+      <p class="result-value" id="p-total">-</p>
+      <p class="result-sub">2026년부터 사후지급금 폐지 — 매월 전액 지급 <span class="badge">2025.1 시행</span></p>
+    </div>
+
+    <table id="p-table">
+      <thead><tr><th>구간</th><th>월 지급률</th><th>월 상한액</th><th>월 예상 지급액</th></tr></thead>
+      <tbody></tbody>
+    </table>
+
+    <p class="note">
+      2026년 기준 상한액: 1~3개월 250만원 · 4~6개월 200만원 · 7개월 이후 160만원 (통상임금의 80%, 하한액 월 70만원)<br>
+      ※ 부모가 모두 육아휴직을 사용하는 '6+6 부모육아휴직제' 특례(생후 18개월 이내, 첫 6개월 통상임금 100%·상한 단계적 인상)는 별도 산정 방식이 적용되어 이 계산기에는 포함되지 않았습니다. 해당 시 관할 고용센터 상담을 권장합니다.<br>
+      본 계산은 참고용이며, 정확한 금액은 관할 고용센터를 통해 확인하시기 바랍니다.
+    </p>
+  </div>
+</div>
+
+<script>
+function fmt(n){ return Math.round(n).toLocaleString('ko-KR') + '원'; }
+function parseNum(v){ return parseFloat((v||'').replace(/[^0-9.]/g,'')) || 0; }
+
+// 입력창에 천단위 쉼표 자동 적용 (커서 위치 보정 포함)
+function attachCommaFormat(id){
+  const el = document.getElementById(id);
+  el.addEventListener('input', () => {
+    const before = el.value;
+    const caretFromEnd = before.length - el.selectionStart;
+    const digits = before.replace(/[^0-9]/g, '');
+    const formatted = digits ? Number(digits).toLocaleString('ko-KR') : '';
+    el.value = formatted;
+    const pos = Math.max(0, formatted.length - caretFromEnd);
+    el.setSelectionRange(pos, pos);
+  });
+}
+attachCommaFormat('u-wage');
+attachCommaFormat('p-wage');
+
+// 탭 전환
+document.getElementById('tab-unemploy').onclick = () => {
+  document.getElementById('tab-unemploy').classList.add('active');
+  document.getElementById('tab-parental').classList.remove('active');
+  document.getElementById('panel-unemploy').classList.remove('hidden');
+  document.getElementById('panel-parental').classList.add('hidden');
+};
+document.getElementById('tab-parental').onclick = () => {
+  document.getElementById('tab-parental').classList.add('active');
+  document.getElementById('tab-unemploy').classList.remove('active');
+  document.getElementById('panel-parental').classList.remove('hidden');
+  document.getElementById('panel-unemploy').classList.add('hidden');
+};
+
+// 소정급여일수표 (고용보험법 별표1)
+const DAYS_TABLE = {
+  under50: {1:120, 3:150, 5:180, 10:210, 99:240},
+  over50:  {1:120, 3:150, 5:180, 10:210, 99:270}
+};
+const DAY_CAP = 68100, DAY_FLOOR = 66048;
+
+function calcUnemploy(){
+  const wage = parseNum(document.getElementById('u-wage').value);
+  const days = parseNum(document.getElementById('u-days').value) || 91;
+  const age = document.getElementById('u-age').value;
+  const insured = document.getElementById('u-insured').value;
+
+  if(wage <= 0){
+    document.getElementById('u-daily').textContent = '-';
+    document.getElementById('u-total').textContent = '-';
+    return;
+  }
+  const avgDaily = wage / days;
+  let daily = avgDaily * 0.6;
+  let note = '평균임금×60% 그대로 적용';
+  if(daily > DAY_CAP){ daily = DAY_CAP; note = '상한액 적용'; }
+  else if(daily < DAY_FLOOR){ daily = DAY_FLOOR; note = '하한액 적용'; }
+
+  const payDays = DAYS_TABLE[age][insured];
+  const total = daily * payDays;
+
+  document.getElementById('u-daily').textContent = fmt(daily);
+  document.getElementById('u-daily-note').textContent = note;
+  document.getElementById('u-total').textContent = fmt(total);
+  document.getElementById('u-days-note').textContent = '소정급여일수 ' + payDays + '일 기준';
+}
+['u-wage','u-days','u-age','u-insured'].forEach(id => {
+  document.getElementById(id).addEventListener('input', calcUnemploy);
+  document.getElementById(id).addEventListener('change', calcUnemploy);
+});
+
+// 육아휴직급여 구간
+function tierFor(month){
+  if(month <= 3) return {label:'1~3개월', rate:0.8, cap:2500000};
+  if(month <= 6) return {label:'4~6개월', rate:0.8, cap:2000000};
+  return {label:'7개월~', rate:0.8, cap:1600000};
+}
+const FLOOR = 700000;
+
+function calcParental(){
+  const wage = parseNum(document.getElementById('p-wage').value);
+  const months = parseInt(document.getElementById('p-months').value);
+  const tbody = document.querySelector('#p-table tbody');
+  tbody.innerHTML = '';
+
+  if(wage <= 0){
+    document.getElementById('p-total').textContent = '-';
+    return;
+  }
+
+  let total = 0;
+  const tierMonthCounts = {}; // label -> {count, tier}
+  for(let m = 1; m <= months; m++){
+    const t = tierFor(m);
+    let pay = wage * t.rate;
+    if(pay > t.cap) pay = t.cap;
+    if(pay < FLOOR) pay = FLOOR;
+    total += pay;
+    if(!tierMonthCounts[t.label]) tierMonthCounts[t.label] = {count:0, tier:t, pay:pay};
+    tierMonthCounts[t.label].count++;
+  }
+  Object.values(tierMonthCounts).forEach(({count, tier, pay}) => {
+    const tr = document.createElement('tr');
+    tr.innerHTML = `<td>${tier.label} (${count}개월)</td><td>80%</td><td>${fmt(tier.cap)}</td><td>${fmt(pay)}</td>`;
+    tbody.appendChild(tr);
+  });
+
+  document.getElementById('p-total').textContent = fmt(total);
+}
+['p-wage','p-months'].forEach(id => {
+  document.getElementById(id).addEventListener('input', calcParental);
+  document.getElementById(id).addEventListener('change', calcParental);
+});
+</script>
+</body>
+</html>

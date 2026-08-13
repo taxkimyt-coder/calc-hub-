@@ -1,0 +1,567 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>종합부동산세 계산기 (2026년 기준)</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+<link rel="stylesheet" as="style" crossorigin href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.css" />
+<style>
+  :root{
+    --ink:#1C2B45; --paper:#F5F1E8; --card:#FFFFFF; --seal:#A93226;
+    --slate:#5B6B7D; --brass:#A9863C; --hair:#E4DFD2; --ok-bg:#E9F1EA; --ok-text:#2E5C3A;
+  }
+  *{box-sizing:border-box;}
+  body{
+    margin:0; background:var(--paper);
+    background-image:radial-gradient(circle at 1px 1px, rgba(28,43,69,0.05) 1px, transparent 0);
+    background-size:22px 22px; color:var(--ink); font-family:'Pretendard', sans-serif; -webkit-font-smoothing:antialiased;
+  }
+  .wrap{ max-width:760px; margin:0 auto; padding:56px 24px 100px; }
+  .eyebrow{ font-size:12px; letter-spacing:0.14em; color:var(--brass); text-transform:uppercase; margin:0 0 12px; font-weight:500; text-align:center; }
+  h1{ font-family:'Pretendard', sans-serif; font-size:32px; font-weight:800; margin:0 0 10px; text-align:center; }
+  .sub{ text-align:center; color:var(--slate); font-size:14px; margin:0 0 32px; }
+
+  .card{ background:var(--card); border:1px solid var(--hair); border-radius:2px; padding:32px; margin-bottom:20px; }
+  .card-title{ font-family:'Pretendard', sans-serif; font-weight:800; font-size:18px; margin:0 0 20px; padding-bottom:14px; border-bottom:1px solid var(--hair); }
+  .field{ margin-bottom:20px; }
+  .field label{ display:block; font-size:13px; color:var(--slate); margin-bottom:6px; }
+  .field input, .field select{
+    width:100%; font-family:'IBM Plex Mono', monospace; font-size:16px; padding:12px 14px;
+    border:1px solid var(--hair); border-radius:2px; background:var(--paper); color:var(--ink); outline:none;
+  }
+  .field select{ font-family:'Pretendard', sans-serif; }
+  .field input:focus, .field select:focus{ border-color:var(--seal); }
+  .field .hint{ font-size:11.5px; color:var(--slate); margin-top:5px; }
+  .calc-btn{
+    width:100%; padding:16px; margin-top:4px; border:none; border-radius:2px;
+    background:var(--ink); color:#fff; font-family:'Pretendard', sans-serif; font-size:16px; font-weight:600;
+    cursor:pointer; letter-spacing:0.02em;
+  }
+  .calc-btn:hover{ background:var(--seal); }
+  .calc-btn:active{ background:#7A241A; }
+
+  .lookup-row{ display:flex; gap:8px; }
+  .lookup-row input{ flex:1; }
+  .lookup-btn{
+    flex:0 0 auto; padding:0 20px; border:1.5px solid var(--ink); border-radius:2px;
+    background:var(--card); color:var(--ink); font-family:'Pretendard', sans-serif; font-size:14px; font-weight:500;
+    cursor:pointer; white-space:nowrap;
+  }
+  .lookup-btn:hover{ background:var(--ink); color:#fff; }
+  .lookup-btn:disabled{ opacity:0.6; cursor:default; }
+  .prep-badge{ display:inline-block; font-size:10.5px; background:var(--warn-bg); color:#7A5A0E; padding:2px 7px; border-radius:2px; margin-left:6px; vertical-align:middle; font-weight:500; }
+  .lookup-status{ font-size:12.5px; margin-top:8px; padding:10px 14px; border-radius:2px; display:none; line-height:1.6; }
+  .lookup-status.show{ display:block; }
+  .lookup-status.info{ background:#FBF1DD; color:#7A5A0E; }
+  .lookup-status.loading{ background:var(--paper); color:var(--slate); }
+  .divider-or{ text-align:center; font-size:11.5px; color:var(--slate); margin:14px 0; position:relative; }
+  .divider-or::before, .divider-or::after{ content:''; position:absolute; top:50%; width:42%; height:1px; background:var(--hair); }
+  .divider-or::before{ left:0; }
+  .divider-or::after{ right:0; }
+
+
+
+  .subtabs, .toggle{ display:flex; gap:8px; margin-bottom:14px; }
+  .subtab, .toggle-btn{
+    flex:1; display:flex; align-items:center; justify-content:center; gap:7px; padding:14px 12px;
+    border:1px solid var(--hair); border-radius:2px;
+    font-size:14px; font-weight:500; cursor:pointer;
+    background:#fff; color:var(--slate);
+  }
+  .subtab.active, .toggle-btn.active{ background:var(--ink); color:#fff; border-color:var(--ink); }
+  .subtab-panel{ display:none; }
+  .subtab-panel.show{ display:block; }
+  .row2{ display:grid; grid-template-columns:1fr 1fr; gap:16px; }
+  .sub-fields{ display:none; }
+  .sub-fields.show{ display:grid; }
+
+  .result{ margin-top:8px; background:var(--paper); border-left:3px solid var(--seal); padding:22px; }
+  .result-label{ font-size:12px; letter-spacing:0.08em; color:var(--seal); text-transform:uppercase; margin:0 0 6px; font-weight:500; }
+  .result-value{ font-family:'Pretendard', sans-serif; font-weight:800; font-size:30px; margin:0 0 4px; }
+  .result-sub{ font-size:13px; color:var(--slate); margin:0; }
+  .result.info{ border-left-color:var(--brass); }
+  .result.cap{ border-left-color:#7A5A0E; background:#FBF1DD; }
+  .result.cap .result-label{ color:#7A5A0E; }
+
+  .compare{ display:grid; grid-template-columns:1fr 1fr; gap:14px; margin-top:8px; }
+  .compare-col{ border:1px solid var(--hair); padding:18px; border-radius:2px; }
+  .compare-col.win{ border-color:var(--ok-text); background:var(--ok-bg); }
+  .compare-title{ font-size:12.5px; color:var(--slate); margin:0 0 8px; font-weight:500; }
+  .compare-value{ font-family:'IBM Plex Mono', monospace; font-size:19px; margin:0; }
+  .badge-win{ display:inline-block; font-size:10.5px; background:var(--ok-text); color:#fff; padding:2px 7px; border-radius:2px; margin-left:6px; vertical-align:middle; }
+
+  .breakdown-grid{ display:grid; grid-template-columns:1fr 1fr; gap:16px; margin-top:8px; align-items:stretch; }
+  .breakdown-col{ border:1px solid var(--hair); border-radius:2px; overflow:hidden; display:flex; flex-direction:column; }
+  .breakdown-col.win{ border-color:var(--ok-text); }
+  .breakdown-head{ padding:14px 16px; border-bottom:1px solid var(--hair); background:var(--paper); }
+  .breakdown-head .title{ font-family:'Pretendard', sans-serif; font-weight:800; font-size:16px; margin:0; }
+  .breakdown-row{ padding:12px 16px; border-bottom:1px solid var(--hair); }
+  .breakdown-row:last-of-type{ border-bottom:none; }
+  .breakdown-row.final{ background:var(--paper); margin-top:auto; }
+  .breakdown-row.win-final{ background:var(--ok-bg); }
+  .breakdown-label{ font-size:11px; letter-spacing:0.06em; color:var(--seal); text-transform:uppercase; margin:0 0 4px; font-weight:500; }
+  .breakdown-value{ font-family:'IBM Plex Mono', monospace; font-size:17px; margin:0; }
+  .breakdown-sub{ font-size:11px; color:var(--slate); margin:3px 0 0; line-height:1.5; }
+  @media (max-width: 640px){ .breakdown-grid{ grid-template-columns:1fr; } }
+
+  .note{ font-size:12px; color:var(--slate); margin-top:20px; line-height:1.8; }
+  .warn-box{ background:#FBF1DD; border-left:3px solid var(--brass); padding:14px 18px; font-size:12.5px; color:#7A5A0E; margin-bottom:24px; line-height:1.7; }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <p class="eyebrow">2026년 현행법 기준</p>
+  <h1>종합부동산세 계산기</h1>
+  <p class="sub">기본공제·세율·세액공제·세부담상한·공동명의 비교까지</p>
+
+  <div class="warn-box">
+    ⚠ 2026년 8월 발표된 세제개편안(기본공제 14억/9억 조정, 세율 인상 등)은 <b>2027년 납세의무 성립분부터 적용 예정</b>이며 국회 심의 중입니다. 이 계산기는 <b>2026년 현재 시행 중인 현행법</b> 기준입니다.
+  </div>
+
+  <div class="card">
+    <p class="card-title">① 기본 정보</p>
+
+    <div class="field">
+      <label>명의 형태</label>
+      <div class="toggle">
+        <div class="toggle-btn active" id="btn-single">단독명의</div>
+        <div class="toggle-btn" id="btn-joint">부부 공동명의</div>
+      </div>
+    </div>
+
+    <div class="field">
+      <label>주택 보유 형태</label>
+      <select id="type">
+        <option value="one">1세대 1주택자</option>
+        <option value="multi2">다주택자 (2주택 이하)</option>
+        <option value="multi3">다주택자 (3주택 이상)</option>
+      </select>
+    </div>
+
+    <div class="field">
+      <label>보유 주택 공시가격 합계</label>
+      <div class="subtabs">
+        <div class="subtab active" id="subtab-lookup">주소로 조회<span class="prep-badge" style="margin-left:6px;">준비중</span></div>
+        <div class="subtab" id="subtab-manual">직접 입력</div>
+      </div>
+
+      <div class="subtab-panel show" id="panel-lookup">
+        <div class="lookup-row">
+          <input type="text" id="address" placeholder="예: 서울특별시 강남구 역삼동 123-45 또는 도로명주소">
+          <button class="lookup-btn" id="lookup-btn">조회</button>
+        </div>
+        <div class="lookup-status" id="lookup-status"></div>
+      </div>
+
+      <div class="subtab-panel" id="panel-manual">
+        <input type="text" id="price" placeholder="예: 1,500,000,000" inputmode="numeric">
+      </div>
+    </div>
+
+    <div class="row2 sub-fields" id="one-fields">
+      <div class="field">
+        <label>연령 (만 나이)</label>
+        <select id="age">
+          <option value="0">60세 미만</option>
+          <option value="20">60세 이상 ~ 65세 미만 (20%)</option>
+          <option value="30">65세 이상 ~ 70세 미만 (30%)</option>
+          <option value="40">70세 이상 (40%)</option>
+        </select>
+      </div>
+      <div class="field">
+        <label>보유기간</label>
+        <select id="hold">
+          <option value="0">5년 미만</option>
+          <option value="20">5년 이상 ~ 10년 미만 (20%)</option>
+          <option value="40">10년 이상 ~ 15년 미만 (40%)</option>
+          <option value="50">15년 이상 (50%)</option>
+        </select>
+      </div>
+    </div>
+
+    <div class="field" id="prev-year-field">
+      <label>전년도(2025년) 공시가격 합계 (원) — 세부담상한 계산용, 모르면 비워두세요</label>
+      <input type="text" id="prevprice" placeholder="예: 1,400,000,000" inputmode="numeric">
+      <p class="hint">홈택스 모의계산과 동일하게, 전년도 실제 납부액이 아니라 전년도 공시가격을 2025년 세율로 재계산해서 세부담상한 기준을 산출합니다 (2025·2026년 세율·공제 기준 동일)</p>
+    </div>
+
+    <div class="field">
+      <label>해당연도 재산세 실제 부과세액 (원) — 이중과세조정용, 모르면 아래 참고 재산세 추정치가 자동 적용됩니다</label>
+      <input type="text" id="ptactual" placeholder="비워두면 추정치 사용" inputmode="numeric">
+    </div>
+
+    <button class="calc-btn" id="calc-btn">계산하기</button>
+  </div>
+
+  <!-- 단독명의 결과 -->
+  <div class="card" id="single-result">
+    <p class="card-title">② 계산 결과</p>
+    <div class="result">
+      <p class="result-label">과세표준</p>
+      <p class="result-value" id="r-base">-</p>
+      <p class="result-sub" id="r-base-note"></p>
+    </div>
+    <div class="result" style="margin-top:12px;">
+      <p class="result-label">산출세액</p>
+      <p class="result-value" id="r-gross">-</p>
+    </div>
+    <div class="result info" style="margin-top:12px;">
+      <p class="result-label">이중과세조정 (재산세액공제)</p>
+      <p class="result-value" id="r-ptcredit">-</p>
+      <p class="result-sub" id="r-ptcredit-note"></p>
+    </div>
+    <div class="result info" style="margin-top:12px;" id="r-credit-box">
+      <p class="result-label">세액공제 (고령자+장기보유, 최대 80%)</p>
+      <p class="result-value" id="r-credit">-</p>
+    </div>
+    <div class="result cap" style="margin-top:12px;" id="r-cap-box">
+      <p class="result-label">세부담상한(150%) 적용</p>
+      <p class="result-value" id="r-cap">-</p>
+      <p class="result-sub" id="r-cap-note"></p>
+    </div>
+    <div class="result" style="margin-top:12px;">
+      <p class="result-label">최종 결정세액 (예상)</p>
+      <p class="result-value" id="r-final">-</p>
+    </div>
+    <div class="result info" style="margin-top:12px;">
+      <p class="result-label">참고 — 표준세율 기준 예상 재산세 (직접 입력 안 하신 경우 이중과세조정 계산에 사용됨)</p>
+      <p class="result-value" id="r-propertytax">-</p>
+      <p class="result-sub">종부세 고지서에는 이중과세조정을 통해 재산세 일부가 반영되지만, 산정 방식이 복잡하여 이 계산기에는 반영하지 않았습니다</p>
+    </div>
+  </div>
+
+  <!-- 공동명의 비교 -->
+  <div class="card" id="joint-result" style="display:none;">
+    <p class="card-title">② 공동명의 방식 비교</p>
+    <p class="note" style="margin-top:0;">부부 공동명의는 매년 9/16~9/30 사이 "1세대1주택자 특례"를 신청해 유리한 방식을 선택할 수 있습니다. 두 방식을 비교해드립니다 (지분 50:50 가정).</p>
+    <div class="breakdown-grid" id="joint-compare"></div>
+  </div>
+
+  <p class="note">
+    기본공제: 1세대1주택자 12억원 · 다주택자/인별과세 9억원 (종부세법 §8) · 공정시장가액비율 60%<br>
+    세율(2주택 이하): 3억↓0.5% / 3~6억 0.7% / 6~12억 1.0% / 12~25억 1.3% / 25~50억 1.5% / 50~94억 2.0% / 94억↑2.7%<br>
+    세율(3주택 이상, 과표 12억 초과분만 중과): 12~25억 2.0% / 25~50억 3.0% / 50~94억 4.0% / 94억↑5.0%<br>
+    이중과세조정(재산세액공제) · 세부담상한: 2026년 종합부동산세 현행법 기준 산식을 그대로 구현했습니다 (재산세 실제 부과세액을 입력하지 않으면 표준세율 기준 추정치로 대체)<br>
+    본 계산은 참고용이며, 정확한 세액은 세무서 또는 세무 전문가 상담을 통해 확인하시기 바랍니다.
+  </p>
+</div>
+
+<script>
+function fmt(n){ return Math.round(n).toLocaleString('ko-KR') + '원'; }
+function parseNum(v){ return parseFloat((v||'').replace(/[^0-9.]/g,'')) || 0; }
+function attachComma(id){
+  document.getElementById(id).addEventListener('input', () => {
+    const el = document.getElementById(id);
+    const caretFromEnd = el.value.length - el.selectionStart;
+    const digits = el.value.replace(/[^0-9]/g, '');
+    el.value = digits ? Number(digits).toLocaleString('ko-KR') : '';
+    const pos = Math.max(0, el.value.length - caretFromEnd);
+    el.setSelectionRange(pos, pos);
+  });
+}
+attachComma('price');
+attachComma('prevprice');
+attachComma('ptactual');
+document.getElementById('calc-btn').addEventListener('click', calc);
+
+function switchPriceTab(which){
+  const isLookup = which === 'lookup';
+  document.getElementById('subtab-lookup').classList.toggle('active', isLookup);
+  document.getElementById('subtab-manual').classList.toggle('active', !isLookup);
+  document.getElementById('panel-lookup').classList.toggle('show', isLookup);
+  document.getElementById('panel-manual').classList.toggle('show', !isLookup);
+}
+document.getElementById('subtab-lookup').addEventListener('click', () => switchPriceTab('lookup'));
+document.getElementById('subtab-manual').addEventListener('click', () => switchPriceTab('manual'));
+
+// 주소→공시가격 조회 — Netlify Functions 프록시(/.netlify/functions/lookup-price) 호출
+// 백엔드에서: 1) juso.go.kr 주소검색으로 PNU 변환 → 2) 공동주택/개별주택 API로 당해년도·전년도 공시가격 조회
+// 반환 형식: { ok:true, price: 1500000000, prevPrice: 1400000000, housingType: '공동주택' }
+async function lookupPriceByAddress(address){
+  try {
+    const res = await fetch(`/.netlify/functions/lookup-price?address=${encodeURIComponent(address)}`);
+    if (!res.ok) return { ok: false, reason: 'server_error' };
+    return await res.json();
+  } catch (e) {
+    return { ok: false, reason: 'network_error' };
+  }
+}
+
+document.getElementById('lookup-btn').addEventListener('click', async () => {
+  const address = document.getElementById('address').value.trim();
+  const statusEl = document.getElementById('lookup-status');
+  const btn = document.getElementById('lookup-btn');
+
+  if(!address){
+    statusEl.className = 'lookup-status info show';
+    statusEl.textContent = '주소를 입력해주세요.';
+    return;
+  }
+
+  btn.disabled = true;
+  btn.textContent = '조회 중…';
+  statusEl.className = 'lookup-status loading show';
+  statusEl.textContent = '공시가격을 조회하고 있습니다…';
+
+  const result = await lookupPriceByAddress(address);
+
+  btn.disabled = false;
+  btn.textContent = '조회';
+
+  if(result.ok){
+    document.getElementById('price').value = Number(result.price).toLocaleString('ko-KR');
+    let msg = `[${result.housingType || '주택'}] 당해년도 공시가격 ${Number(result.price).toLocaleString('ko-KR')}원을 자동으로 입력했습니다.`;
+    if(result.prevPrice){
+      document.getElementById('prevprice').value = Number(result.prevPrice).toLocaleString('ko-KR');
+      msg += ` 전년도 공시가격 ${Number(result.prevPrice).toLocaleString('ko-KR')}원도 세부담상한 계산용으로 함께 입력했습니다.`;
+    } else {
+      msg += ' 전년도 공시가격은 조회되지 않아 세부담상한 계산에 필요하면 직접 입력해주세요.';
+    }
+    statusEl.className = 'lookup-status info show';
+    statusEl.textContent = msg + ' 정확한 금액은 부동산공시가격알리미에서 다시 확인해주세요.';
+    switchPriceTab('manual');
+  } else {
+    statusEl.className = 'lookup-status info show';
+    statusEl.textContent = '자동조회 기능은 아직 API 연동 전입니다. "직접 입력" 탭에서 입력해주세요. (부동산공시가격알리미 realtyprice.kr 에서 확인 가능)';
+    switchPriceTab('manual');
+    document.getElementById('price').focus();
+  }
+});
+
+let jointMode = false;
+document.getElementById('btn-single').onclick = () => {
+  jointMode = false;
+  document.getElementById('btn-single').classList.add('active');
+  document.getElementById('btn-joint').classList.remove('active');
+  document.getElementById('single-result').style.display = 'block';
+  document.getElementById('joint-result').style.display = 'none';
+};
+document.getElementById('btn-joint').onclick = () => {
+  jointMode = true;
+  document.getElementById('btn-joint').classList.add('active');
+  document.getElementById('btn-single').classList.remove('active');
+  document.getElementById('single-result').style.display = 'none';
+  document.getElementById('joint-result').style.display = 'block';
+};
+
+document.getElementById('type').addEventListener('change', () => {
+  const isOne = document.getElementById('type').value === 'one';
+  document.getElementById('one-fields').classList.toggle('show', isOne);
+  document.getElementById('r-credit-box').style.display = isOne ? 'block' : 'none';
+});
+
+const 억 = 100000000, 만 = 10000;
+
+const RATE_NORMAL = [
+  {upto: 3*억,   base: 0,        rate: 0.005},
+  {upto: 6*억,   base: 150*만,   rate: 0.007},
+  {upto: 12*억,  base: 360*만,   rate: 0.010},
+  {upto: 25*억,  base: 960*만,   rate: 0.013},
+  {upto: 50*억,  base: 2650*만,  rate: 0.015},
+  {upto: 94*억,  base: 6400*만,  rate: 0.020},
+  {upto: Infinity, base: 15200*만, rate: 0.027}
+];
+const RATE_MULTI3 = [
+  {upto: 3*억,   base: 0,        rate: 0.005},
+  {upto: 6*억,   base: 150*만,   rate: 0.007},
+  {upto: 12*억,  base: 360*만,   rate: 0.010},
+  {upto: 25*억,  base: 960*만,   rate: 0.020},
+  {upto: 50*억,  base: 3560*만,  rate: 0.030},
+  {upto: 94*억,  base: 11060*만, rate: 0.040},
+  {upto: Infinity, base: 28660*만, rate: 0.050}
+];
+// 재산세 표준세율 (참고용)
+const PROPERTY_RATE = [
+  {upto: 0.6*억, base: 0,       rate: 0.001},
+  {upto: 1.5*억, base: 6*만,    rate: 0.0015},
+  {upto: 3*억,   base: 19.5*만, rate: 0.0025},
+  {upto: Infinity, base: 57*만, rate: 0.004}
+];
+
+function bracketCalc(base, table){
+  if(base <= 0) return 0;
+  let prevUpto = 0;
+  for(let i=0;i<table.length;i++){
+    const b = table[i];
+    if(base <= b.upto){
+      const prevBase = i>0 ? table[i-1].upto : 0;
+      return b.base + (base - prevBase) * b.rate;
+    }
+  }
+  return 0;
+}
+
+// 국세청 2026 종합부동산세 요약표('26.8.10) 산출세액 계산흐름 그대로 구현
+// 산출세액 = (과표×세율-누진공제) - 공제할재산세액
+// 공제할재산세액 = 재산세부과세액 × [종부세과표 기준 재산세상당액 / 전체공시가격 기준 재산세상당액]
+// 세액공제(1주택자) = (위 산출세액) × 연령+보유기간 공제율
+// 세부담상한초과세액 = (재산세+세부담상한전종부세액) - 전년(재산세+종부세)×150%
+//   ※ 홈택스 모의계산과 동일하게, 전년도 총세액상당액은 "전년도 실제 납부액"이 아니라
+//     "전년도 공시가격을 전년도(2025년, 2026년과 세율·공제 동일) 기준으로 재계산"한 값을 사용
+
+function computeYearTotal(price, deduction, table, ageRate, holdRate, isOneHouse){
+  const base = Math.max(0, (price - deduction) * 0.6);
+  const gross0 = bracketCalc(base, table);
+
+  const ptRatio = isOneHouse ? 0.45 : 0.60;
+  const numBase = base * ptRatio;
+  const numerator = bracketCalc(numBase, PROPERTY_RATE);
+  const denomBase = price * ptRatio;
+  const denominator = bracketCalc(denomBase, PROPERTY_RATE);
+  const estimatedPT = denominator;
+  const ptRatioForCredit = denominator > 0 ? (numerator / denominator) : 0;
+  const ptCredit = estimatedPT * ptRatioForCredit;
+
+  const gross = Math.max(0, gross0 - ptCredit);
+  const creditRate = Math.min(ageRate + holdRate, 0.8);
+  const credit = gross * creditRate;
+  const jongbuseFinal = gross - credit; // 세부담상한전 종부세액
+
+  return { estimatedPT, jongbuseFinal, total: estimatedPT + jongbuseFinal };
+}
+
+function computeOne(price, deduction, table, ageRate, holdRate, prevPrice, isOneHouse, ptActualInput){
+  const base = Math.max(0, (price - deduction) * 0.6);
+  const gross0 = bracketCalc(base, table); // (과표×세율-누진공제)
+
+  // 이중과세조정 (재산세액공제)
+  const ptRatio = isOneHouse ? 0.45 : 0.60; // 재산세 공정시장가액비율
+  const numBase = base * ptRatio;                    // 종부세과표 × 재산세공정시장가액비율
+  const numerator = bracketCalc(numBase, PROPERTY_RATE);
+  const denomBase = price * ptRatio;                  // 전체공시가격 × 재산세공정시장가액비율
+  const denominator = bracketCalc(denomBase, PROPERTY_RATE);
+  const estimatedPT = denominator; // 표준세율 기준 추정 재산세 (실제 입력 없을 때 대체값)
+  const ptActual = ptActualInput > 0 ? ptActualInput : estimatedPT;
+  const ptRatioForCredit = denominator > 0 ? (numerator / denominator) : 0;
+  const ptCredit = ptActual * ptRatioForCredit;
+
+  const gross = Math.max(0, gross0 - ptCredit); // 재산세액공제 반영 후 "산출세액"
+
+  const creditRate = Math.min(ageRate + holdRate, 0.8);
+  const credit = gross * creditRate; // 세액공제는 재산세공제 반영 후 금액 기준
+  let final = gross - credit; // 세부담상한전 종부세액
+
+  let capped = false, capLimit = null, prevTotal = null;
+  if(prevPrice > 0){
+    // 홈택스 방식: 전년도 공시가격을 동일 산식(전년도 세율=당해년도와 동일)으로 재계산
+    const py = computeYearTotal(prevPrice, deduction, table, ageRate, holdRate, isOneHouse);
+    prevTotal = py.total;
+    const thisYearTotal = ptActual + final;
+    const cap = prevTotal * 1.5;
+    const excess = thisYearTotal - cap;
+    if(excess > 0){
+      final = Math.max(0, final - excess);
+      capped = true;
+      capLimit = cap;
+    }
+  }
+  return {base, gross0, ptCredit, ptActual, estimatedPT, gross, credit, creditRate, final, capped, capLimit, prevTotal};
+}
+
+function calc(){
+  const type = document.getElementById('type').value;
+  const price = parseNum(document.getElementById('price').value);
+  const prevPrice = parseNum(document.getElementById('prevprice').value);
+  const table = type === 'multi3' ? RATE_MULTI3 : RATE_NORMAL;
+
+  const ptActualInput = parseNum(document.getElementById('ptactual').value);
+
+  if(!jointMode){
+    const deduction = type === 'one' ? 12*억 : 9*억;
+    const ageRate = type === 'one' ? parseInt(document.getElementById('age').value)/100 : 0;
+    const holdRate = type === 'one' ? parseInt(document.getElementById('hold').value)/100 : 0;
+    const r = computeOne(price, deduction, table, ageRate, holdRate, prevPrice, type==='one', ptActualInput);
+
+    document.getElementById('r-base').textContent = fmt(r.base);
+    document.getElementById('r-base-note').textContent =
+      `공시가격 ${fmt(price)} - 기본공제 ${fmt(deduction)}, 공정시장가액비율 60%`;
+    document.getElementById('r-gross').textContent = price>0 ? fmt(r.gross0) : '-';
+    document.getElementById('r-ptcredit').textContent = price>0 ? fmt(r.ptCredit) : '-';
+    document.getElementById('r-ptcredit-note').textContent = price>0
+      ? `재산세 ${ptActualInput>0 ? '직접 입력값' : '추정치'} ${fmt(r.ptActual)} 기준, 국세청 공식 이중과세조정 산식 적용`
+      : '';
+    document.getElementById('r-credit').textContent = (price>0 && type==='one') ? fmt(r.credit) + ` (${Math.round(r.creditRate*100)}%)` : '-';
+    document.getElementById('r-cap-box').style.display = r.capped ? 'block' : 'none';
+    if(r.capped){
+      document.getElementById('r-cap').textContent = fmt(r.capLimit);
+      document.getElementById('r-cap-note').textContent = `전년도 공시가격 ${fmt(prevPrice)} 기준 재계산 총세액상당액 ${fmt(r.prevTotal)}의 150%로 제한됨`;
+    }
+    document.getElementById('r-final').textContent = price>0 ? fmt(r.final) : '-';
+    document.getElementById('r-propertytax').textContent = price>0 ? fmt(r.estimatedPT) : '-';
+  } else {
+    const ageRate = parseInt(document.getElementById('age').value)/100;
+    const holdRate = parseInt(document.getElementById('hold').value)/100;
+
+    // 방식 A: 인별과세 — 부부 각자 9억 공제, 세액공제 없음, 지분 50:50 가정
+    // (재산세실입력·전년도공시가격도 50:50으로 나눠 각자 계산 후 합산)
+    const half = v => v > 0 ? v/2 : 0;
+    const spouse = computeOne(price/2, 9*억, table, 0, 0, half(prevPrice), false, half(ptActualInput));
+    const A = {
+      base: spouse.base*2, gross0: spouse.gross0*2, ptCredit: spouse.ptCredit*2, ptActual: spouse.ptActual*2,
+      credit: 0, creditRate: 0, final: spouse.final*2, capped: spouse.capped,
+      capLimit: spouse.capLimit!=null ? spouse.capLimit*2 : null, prevTotal: spouse.prevTotal!=null ? spouse.prevTotal*2 : null
+    };
+
+    // 방식 B: 1세대1주택자 특례 — 12억 통합공제 + 세액공제
+    const B = computeOne(price, 12*억, RATE_NORMAL, ageRate, holdRate, prevPrice, true, ptActualInput);
+
+    const winA = A.final <= B.final;
+
+    function renderBreakdown(title, r, isWinner, showCredit, footNote){
+      return `
+        <div class="breakdown-col ${isWinner ? 'win' : ''}">
+          <div class="breakdown-head">
+            <p class="title">${title}${isWinner ? '<span class="badge-win">유리</span>' : ''}</p>
+          </div>
+          <div class="breakdown-row">
+            <p class="breakdown-label">과세표준</p>
+            <p class="breakdown-value">${price>0 ? fmt(r.base) : '-'}</p>
+          </div>
+          <div class="breakdown-row">
+            <p class="breakdown-label">산출세액</p>
+            <p class="breakdown-value">${price>0 ? fmt(r.gross0) : '-'}</p>
+          </div>
+          <div class="breakdown-row">
+            <p class="breakdown-label">이중과세조정</p>
+            <p class="breakdown-value">${price>0 ? fmt(r.ptCredit) : '-'}</p>
+          </div>
+          ${showCredit ? `
+          <div class="breakdown-row">
+            <p class="breakdown-label">세액공제</p>
+            <p class="breakdown-value">${price>0 ? fmt(r.credit) + ` (${Math.round(r.creditRate*100)}%)` : '-'}</p>
+          </div>` : `
+          <div class="breakdown-row">
+            <p class="breakdown-label">세액공제</p>
+            <p class="breakdown-value">해당없음</p>
+            <p class="breakdown-sub">인별과세는 1세대1주택 특례가 아니므로 고령자·장기보유공제 미적용</p>
+          </div>`}
+          ${r.capped ? `
+          <div class="breakdown-row">
+            <p class="breakdown-label">세부담상한(150%)</p>
+            <p class="breakdown-value">${fmt(r.capLimit)}</p>
+            <p class="breakdown-sub">전년도 재계산 총세액상당액 ${fmt(r.prevTotal)}의 150%로 제한됨</p>
+          </div>` : ''}
+          <div class="breakdown-row final ${isWinner ? 'win-final' : ''}">
+            <p class="breakdown-label">최종 결정세액</p>
+            <p class="breakdown-value" style="font-size:22px;">${price>0 ? fmt(r.final) : '-'}</p>
+            <p class="breakdown-sub">${footNote}</p>
+          </div>
+        </div>
+      `;
+    }
+
+    const html =
+      renderBreakdown('방식 A · 인별과세 (각자 9억)', A, winA, false, '부부 각자 산정 후 합산, 지분 50:50 가정') +
+      renderBreakdown('방식 B · 1세대1주택 특례 (12억)', B, !winA, true, '지분율 낮은 배우자 명의는 세액공제에서 일부 제한될 수 있음');
+
+    document.getElementById('joint-compare').innerHTML = html;
+  }
+}
+
+document.getElementById('one-fields').classList.add('show');
+calc();
+</script>
+</body>
+</html>

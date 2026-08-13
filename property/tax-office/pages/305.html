@@ -1,0 +1,207 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>대전세무서 관할구역 안내</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+<link rel="stylesheet" as="style" crossorigin href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.css" />
+<style>
+  :root{
+    --ink:#1C2B45;
+    --paper:#F5F1E8;
+    --card:#FFFFFF;
+    --seal:#A93226;
+    --slate:#5B6B7D;
+    --brass:#A9863C;
+    --hair:#E4DFD2;
+  }
+  *{box-sizing:border-box;}
+  body{
+    margin:0;
+    background:var(--paper);
+    background-image:
+      radial-gradient(circle at 1px 1px, rgba(28,43,69,0.05) 1px, transparent 0);
+    background-size:22px 22px;
+    color:var(--ink);
+    font-family:'Pretendard', sans-serif;
+    -webkit-font-smoothing:antialiased;
+  }
+  .wrap{
+    max-width:720px;
+    margin:0 auto;
+    padding:56px 24px 80px;
+  }
+  .breadcrumb{
+    font-size:13px;
+    color:var(--slate);
+    margin-bottom:28px;
+    letter-spacing:0.02em;
+  }
+  .breadcrumb a{color:var(--slate); text-decoration:none; border-bottom:1px solid var(--hair);}
+  .card{
+    background:var(--card);
+    border:1px solid var(--hair);
+    border-radius:2px;
+    padding:44px 44px 36px;
+    position:relative;
+    box-shadow:0 1px 0 rgba(28,43,69,0.03);
+  }
+  .headline{
+    display:flex;
+    justify-content:space-between;
+    align-items:flex-start;
+    gap:24px;
+    padding-bottom:28px;
+    border-bottom:1px solid var(--hair);
+  }
+  .eyebrow{
+    font-size:12px;
+    letter-spacing:0.14em;
+    color:var(--brass);
+    text-transform:uppercase;
+    margin:0 0 10px;
+    font-weight:500;
+  }
+  h1{
+    font-family:'Pretendard', sans-serif; font-weight:800;
+    font-size:34px;
+    font-weight:400;
+    margin:0;
+    color:var(--ink);
+    line-height:1.25;
+  }
+  .stamp{
+    flex:0 0 auto;
+    width:92px;
+    height:92px;
+    transform:rotate(-7deg);
+  }
+  .ledger{
+    margin-top:28px;
+  }
+  .row{
+    display:flex;
+    justify-content:space-between;
+    align-items:baseline;
+    padding:13px 0;
+    border-bottom:1px solid var(--hair);
+    gap:16px;
+  }
+  .row:last-child{border-bottom:none;}
+  .label{
+    font-size:13px;
+    color:var(--slate);
+    flex:0 0 92px;
+  }
+  .value{
+    font-family:'IBM Plex Mono', monospace;
+    font-size:14px;
+    color:var(--ink);
+    text-align:right;
+    letter-spacing:0.01em;
+  }
+  .value.addr{
+    font-family:'Pretendard', sans-serif;
+    text-align:right;
+  }
+  .juris{
+    margin-top:28px;
+    background:var(--paper);
+    border-left:3px solid var(--seal);
+    padding:18px 22px;
+  }
+  .juris-label{
+    font-size:12px;
+    letter-spacing:0.1em;
+    color:var(--seal);
+    text-transform:uppercase;
+    margin:0 0 8px;
+    font-weight:500;
+  }
+  .juris-text{
+    font-size:15px;
+    line-height:1.75;
+    margin:0;
+    color:var(--ink);
+  }
+  .foot{
+    margin-top:22px;
+    display:flex;
+    justify-content:space-between;
+    font-size:12px;
+    color:var(--slate);
+  }
+  .source-note{
+    margin-top:18px;
+    font-size:12px;
+    color:var(--slate);
+    text-align:center;
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="breadcrumb"><a href="/">전국 세무서 조회</a> &gt; 대전세무서</div>
+
+  <div class="card">
+    <div class="headline">
+      <div>
+        <p class="eyebrow">관할구역 안내</p>
+        <h1>대전세무서</h1>
+      </div>
+      <svg class="stamp" viewBox="0 0 100 100" role="img" aria-label="세무서 코드 305">
+        <defs>
+          <filter id="ink">
+            <feTurbulence type="fractalNoise" baseFrequency="0.9" numOctaves="2" result="noise" seed="4"/>
+            <feDisplacementMap in="SourceGraphic" in2="noise" scale="3.2"/>
+          </filter>
+        </defs>
+        <g filter="url(#ink)">
+          <circle cx="50" cy="50" r="44" fill="none" stroke="#A93226" stroke-width="2.4"/>
+          <circle cx="50" cy="50" r="36" fill="none" stroke="#A93226" stroke-width="1.2"/>
+          <text x="50" y="46" text-anchor="middle" font-family="IBM Plex Mono, monospace" font-size="18" fill="#A93226" font-weight="500">305</text>
+          <text x="50" y="64" text-anchor="middle" font-family="Pretendard, sans-serif" font-size="9" fill="#A93226">세무서코드</text>
+        </g>
+      </svg>
+    </div>
+
+    <div class="ledger">
+      <div class="row">
+        <span class="label">주소</span>
+        <span class="value addr">대전광역시 중구 보문로 285 (선화동 287-1) 대전세무서</span>
+      </div>
+      <div class="row">
+        <span class="label">우편번호</span>
+        <span class="value">34863</span>
+      </div>
+      <div class="row">
+        <span class="label">전화</span>
+        <span class="value">042-229-8200</span>
+      </div>
+      <div class="row">
+        <span class="label">팩스</span>
+        <span class="value">042-253-4990</span>
+      </div>
+      <div class="row">
+        <span class="label">계좌번호</span>
+        <span class="value">080486</span>
+      </div>
+    </div>
+
+    <div class="juris">
+      <p class="juris-label">관할구역</p>
+      <p class="juris-text">대전광역시 중구, 대전광역시 동구, 충청남도 금산군</p>
+    </div>
+
+    <div class="foot">
+      <span>국세청 공개 데이터 기준</span>
+      <span>2026.04 갱신</span>
+    </div>
+  </div>
+
+  <p class="source-note">본 정보는 국세청이 공개한 세무서별 관할구역 데이터를 기반으로 재구성했습니다. 정확한 확인은 국세청 홈페이지를 통해서도 가능합니다.</p>
+</div>
+</body>
+</html>
