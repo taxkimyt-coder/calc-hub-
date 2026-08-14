@@ -1,0 +1,40 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<title>주소 검색</title>
+</head>
+<body>
+<form id="form" method="post" action="https://business.juso.go.kr/addrlink/addrLinkUrl.do">
+  <input type="hidden" name="confmKey" value="U01TX0FVVEgyMDI2MDgxNDEwNDkwMjExOTk5NDQ=">
+  <input type="hidden" name="returnUrl" id="returnUrl" value="">
+  <input type="hidden" name="resultType" value="4">
+</form>
+<script>
+// 이 페이지는 juso.go.kr 팝업 API의 jusoPopup.jsp 역할을 하는 정적 버전입니다.
+// 1) 처음 열릴 때: juso.go.kr 검색화면으로 폼을 POST 전송
+// 2) 사용자가 주소를 선택하면 juso.go.kr이 이 페이지로 결과를 돌려보냄(GET 쿼리스트링)
+// 3) 그 결과를 읽어서 opener(부모 창)의 jusoCallBack()을 호출하고 창을 닫음
+
+const params = new URLSearchParams(location.search);
+
+if (params.has('roadFullAddr') || params.has('admCd')) {
+  // juso.go.kr이 결과를 돌려준 상태
+  const get = (k) => params.get(k) || '';
+  if (window.opener && window.opener.jusoCallBack) {
+    window.opener.jusoCallBack(
+      get('roadFullAddr'), get('roadAddrPart1'), get('addrDetail'), get('roadAddrPart2'), get('engAddr'),
+      get('jibunAddr'), get('zipNo'), get('admCd'), get('rnMgtSn'), get('bdMgtSn'), get('detBdNmList'),
+      get('bdNm'), get('bdKdcd'), get('siNm'), get('sggNm'), get('emdNm'), get('liNm'), get('rn'), get('udrtYn'),
+      get('buldMnnm'), get('buldSlno'), get('mtYn'), get('lnbrMnnm'), get('lnbrSlno'), get('emdNo')
+    );
+  }
+  window.close();
+} else {
+  // 최초 진입: juso.go.kr로 폼 제출
+  document.getElementById('returnUrl').value = location.href;
+  document.getElementById('form').submit();
+}
+</script>
+</body>
+</html>
