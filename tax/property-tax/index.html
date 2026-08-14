@@ -286,15 +286,12 @@ function switchPriceTab(which){
 document.getElementById('subtab-lookup').addEventListener('click', () => switchPriceTab('lookup'));
 document.getElementById('subtab-manual').addEventListener('click', () => switchPriceTab('manual'));
 
-// 주소 검색 팝업 (juso.go.kr 공식 팝업 API) — 서버가 주소를 파싱하지 않고,
-// 사용자가 직접 검색해서 고른 주소의 필드(admCd·mtYn·lnbrMnnm·lnbrSlno)를 브라우저가 바로 받습니다.
-// ⚠ 이 confmKey는 juso.go.kr "팝업 API" 승인키입니다 (검색API 승인키와 다를 수 있음).
-// 팝업 API는 도메인 등록 기반이라 브라우저에 노출되는 게 정상입니다 (서버 비밀키와는 성격이 다름).
-const JUSO_POPUP_KEY = 'U01TX0FVVEgyMDI2MDgxNDEwNDkwMjExOTk5NDQ='; // juso.go.kr 팝업 API 승인키 (도메인 등록 기반, 노출 정상)
-
+// 주소 검색 팝업 — juso.go.kr은 서버사이드(JSP) 중간 페이지가 필요한 구조라,
+// 그 역할을 하는 정적 페이지(juso-popup.html)를 우리 사이트 루트에 만들어 대신 엽니다.
+// 흐름: 계산기 → juso-popup.html(우리 페이지) → juso.go.kr 검색화면 → 다시 juso-popup.html로 결과 반환 → 부모창에 콜백
 function openJusoPopup(){
   window.open(
-    `https://business.juso.go.kr/addrlink/addrLinkUrl.do?confmKey=${encodeURIComponent(JUSO_POPUP_KEY)}&returnUrl=${encodeURIComponent(location.href)}&resultType=4`,
+    '/juso-popup.html',
     'jusoPopup', 'width=570,height=420,scrollbars=yes,resizable=yes'
   );
 }
