@@ -149,10 +149,20 @@
 
       <div class="subtab-panel show" id="panel-lookup">
         <div class="lookup-row">
-          <input type="text" id="address" placeholder="예: 서울특별시 강남구 역삼동 123-45 또는 도로명주소">
-          <button class="lookup-btn" id="lookup-btn">조회</button>
+          <input type="text" id="address" placeholder="주소 검색 버튼을 눌러 선택해주세요" readonly>
+          <button class="lookup-btn" id="lookup-btn">주소 검색</button>
         </div>
         <div class="lookup-status" id="lookup-status"></div>
+        <div class="row2" id="unit-select-row" style="display:none; margin-top:12px;">
+          <div class="field" style="margin-bottom:0;">
+            <label>동</label>
+            <select id="unit-dong"></select>
+          </div>
+          <div class="field" style="margin-bottom:0;">
+            <label>호</label>
+            <select id="unit-ho"></select>
+          </div>
+        </div>
       </div>
 
       <div class="subtab-panel" id="panel-manual">
@@ -276,40 +286,116 @@ function switchPriceTab(which){
 document.getElementById('subtab-lookup').addEventListener('click', () => switchPriceTab('lookup'));
 document.getElementById('subtab-manual').addEventListener('click', () => switchPriceTab('manual'));
 
-// 주소→공시가격 조회 — Netlify Functions 프록시(/.netlify/functions/lookup-price) 호출
-// 백엔드에서: 1) juso.go.kr 주소검색으로 PNU 변환 → 2) 공동주택/개별주택 API로 당해년도·전년도 공시가격 조회
-// 반환 형식: { ok:true, price: 1500000000, prevPrice: 1400000000, housingType: '공동주택' }
-async function lookupPriceByAddress(address){
-  try {
-    const res = await fetch(`/.netlify/functions/lookup-price?address=${encodeURIComponent(address)}`);
-    if (!res.ok) return { ok: false, reason: 'server_error' };
-    return await res.json();
-  } catch (e) {
-    return { ok: false, reason: 'network_error' };
-  }
+// 주소 검색 팝업 (juso.go.kr 공식 팝업 API) — 서버가 주소를 파싱하지 않고,
+// 사용자가 직접 검색해서 고른 주소의 필드(admCd·mtYn·lnbrMnnm·lnbrSlno)를 브라우저가 바로 받습니다.
+// ⚠ 이 confmKey는 juso.go.kr "팝업 API" 승인키입니다 (검색API 승인키와 다를 수 있음).
+// 팝업 API는 도메인 등록 기반이라 브라우저에 노출되는 게 정상입니다 (서버 비밀키와는 성격이 다름).
+const JUSO_POPUP_KEY = 'U01TX0FVVEgyMDI2MDgxNDEwNDkwMjExOTk5NDQ='; // juso.go.kr 팝업 API 승인키 (도메인 등록 기반, 노출 정상)
+
+function openJusoPopup(){
+  window.open(
+    `https://business.juso.go.kr/addrlink/addrLinkUrl.do?confmKey=${encodeURIComponent(JUSO_POPUP_KEY)}&returnUrl=${encodeURIComponent(location.href)}&resultType=4`,
+    'jusoPopup', 'width=570,height=420,scrollbars=yes,resizable=yes'
+  );
 }
 
-document.getElementById('lookup-btn').addEventListener('click', async () => {
-  const address = document.getElementById('address').value.trim();
-  const statusEl = document.getElementById('lookup-status');
-  const btn = document.getElementById('lookup-btn');
+// juso.go.kr 팝업이 결과를 돌려줄 때 호출하는 전역 콜백 (공식 API 명세 그대로)
+window.jusoCallBack = function(roadFullAddr, roadAddrPart1, addrDetail, roadAddrPart2, engAddr,
+  jibunAddr, zipNo, admCd, rnMgtSn, bdMgtSn, detBdNmList, bdNm, bdKdcd, siNm, sggNm, emdNm, liNm,
+  rn, udrtYn, buldMnnm, buldSlno, mtYn, lnbrMnnm, lnbrSlno){
 
-  if(!address){
+  document.getElementById('address').value = roadFullAddr || jibunAddr;
+
+  // PNU(19자리) = 행정구역코드(10) + 산여부(1, 0→1/1→2 변환) + 지번본번(4) + 지번부번(4)
+  const mtYnPnu = String(mtYn) === '1' ? '2' : '1';
+  const mnnm = String(buldMnnm || lnbrMnnm || '0').padStart(4, '0');
+  const slno = String(buldSlno || lnbrSlno || '0').padStart(4, '0');
+  const pnu = `${admCd}${mtYnPnu}${mnnm}${slno}`;
+
+  fetchUnitList(pnu);
+};
+
+let currentPnu = null;
+let unitsByDong = {}; // { 동이름: [ {dongNm, hoNm, ...}, ... ] }
+
+// 1단계: PNU(단지) 안의 동/호 목록 조회 — 공동주택은 세대별로 가격이 달라서
+// 동/호를 특정해야 정확한 공시가격이 나옵니다 (부동산공시가격알리미와 동일한 방식)
+async function fetchUnitList(pnu){
+  currentPnu = pnu;
+  const statusEl = document.getElementById('lookup-status');
+  const rowEl = document.getElementById('unit-select-row');
+  rowEl.style.display = 'none';
+  statusEl.className = 'lookup-status loading show';
+  statusEl.textContent = '이 단지의 동/호 목록을 불러오는 중…';
+
+  let result;
+  try {
+    const res = await fetch(`/.netlify/functions/lookup-price?mode=units&pnu=${encodeURIComponent(pnu)}`);
+    result = res.ok ? await res.json() : { ok: false, reason: 'server_error' };
+  } catch (e) {
+    result = { ok: false, reason: 'network_error' };
+  }
+
+  if (!result.ok) {
     statusEl.className = 'lookup-status info show';
-    statusEl.textContent = '주소를 입력해주세요.';
+    statusEl.textContent = '공시가격 조회에 실패했습니다. "직접 입력" 탭에서 입력해주세요. (부동산공시가격알리미 realtyprice.kr 에서 확인 가능)';
+    switchPriceTab('manual');
+    document.getElementById('price').focus();
     return;
   }
 
-  btn.disabled = true;
-  btn.textContent = '조회 중…';
+  if (result.needsSelection) {
+    // 동별로 그룹화해서 드롭다운 채우기
+    unitsByDong = {};
+    result.units.forEach(u => {
+      if (!unitsByDong[u.dongNm]) unitsByDong[u.dongNm] = [];
+      unitsByDong[u.dongNm].push(u);
+    });
+    const dongSelect = document.getElementById('unit-dong');
+    dongSelect.innerHTML = Object.keys(unitsByDong).sort().map(d => `<option value="${d}">${d}동</option>`).join('');
+    populateHoOptions();
+    rowEl.style.display = 'grid';
+    statusEl.className = 'lookup-status info show';
+    statusEl.textContent = '동과 호를 선택하면 정확한 공시가격을 조회합니다.';
+  } else {
+    // 단독주택 등 동/호 구분 없이 바로 가격이 나온 경우
+    applyPriceResult(result);
+  }
+}
+
+function populateHoOptions(){
+  const dong = document.getElementById('unit-dong').value;
+  const list = (unitsByDong[dong] || []).slice().sort((a,b) => String(a.hoNm).localeCompare(String(b.hoNm)));
+  document.getElementById('unit-ho').innerHTML = list.map(u => `<option value="${u.hoNm}">${u.hoNm}호</option>`).join('');
+}
+document.getElementById('unit-dong').addEventListener('change', () => {
+  populateHoOptions();
+  fetchExactPrice();
+});
+document.getElementById('unit-ho').addEventListener('change', fetchExactPrice);
+
+// 2단계: 동/호까지 지정해서 정확한 세대 공시가격 조회
+async function fetchExactPrice(){
+  const dongNm = document.getElementById('unit-dong').value;
+  const hoNm = document.getElementById('unit-ho').value;
+  if (!currentPnu || !dongNm || !hoNm) return;
+
+  const statusEl = document.getElementById('lookup-status');
   statusEl.className = 'lookup-status loading show';
   statusEl.textContent = '공시가격을 조회하고 있습니다…';
 
-  const result = await lookupPriceByAddress(address);
+  let result;
+  try {
+    const res = await fetch(`/.netlify/functions/lookup-price?pnu=${encodeURIComponent(currentPnu)}&dongNm=${encodeURIComponent(dongNm)}&hoNm=${encodeURIComponent(hoNm)}`);
+    result = res.ok ? await res.json() : { ok: false, reason: 'server_error' };
+  } catch (e) {
+    result = { ok: false, reason: 'network_error' };
+  }
+  applyPriceResult(result);
+}
 
-  btn.disabled = false;
-  btn.textContent = '조회';
-
+function applyPriceResult(result){
+  const statusEl = document.getElementById('lookup-status');
   if(result.ok){
     document.getElementById('price').value = Number(result.price).toLocaleString('ko-KR');
     let msg = `[${result.housingType || '주택'}] 당해년도 공시가격 ${Number(result.price).toLocaleString('ko-KR')}원을 자동으로 입력했습니다.`;
@@ -324,11 +410,14 @@ document.getElementById('lookup-btn').addEventListener('click', async () => {
     switchPriceTab('manual');
   } else {
     statusEl.className = 'lookup-status info show';
-    statusEl.textContent = '자동조회 기능은 아직 API 연동 전입니다. "직접 입력" 탭에서 입력해주세요. (부동산공시가격알리미 realtyprice.kr 에서 확인 가능)';
+    statusEl.textContent = '공시가격 조회에 실패했습니다. "직접 입력" 탭에서 입력해주세요. (부동산공시가격알리미 realtyprice.kr 에서 확인 가능)';
     switchPriceTab('manual');
     document.getElementById('price').focus();
   }
-});
+}
+
+document.getElementById('lookup-btn').addEventListener('click', openJusoPopup);
+
 
 let jointMode = false;
 document.getElementById('btn-single').onclick = () => {
